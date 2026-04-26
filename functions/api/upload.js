@@ -1,20 +1,14 @@
 import {
   ghHeaders,
   repoBase,
-  dirPath,
   filePath,
   bufferToBase64,
   getFileSha,
-  requireAdmin,
   json,
 } from "../_lib/github.js";
 
 // POST /api/upload  (multipart/form-data with field "file")
-// Header: x-admin-password: <ADMIN_PASSWORD>
 export async function onRequestPost({ request, env }) {
-  const unauth = requireAdmin(request, env);
-  if (unauth) return unauth;
-
   let form;
   try {
     form = await request.formData();

@@ -3,12 +3,11 @@ import {
   repoBase,
   filePath,
   getFileSha,
-  requireAdmin,
   json,
 } from "../../_lib/github.js";
 
 // GET    /api/download/:name  -> streams file bytes back to the browser
-// DELETE /api/download/:name  -> deletes file (admin only)
+// DELETE /api/download/:name  -> deletes file
 export async function onRequestGet({ params, env }) {
   let path;
   try {
@@ -63,10 +62,7 @@ export async function onRequestGet({ params, env }) {
   });
 }
 
-export async function onRequestDelete({ request, params, env }) {
-  const unauth = requireAdmin(request, env);
-  if (unauth) return unauth;
-
+export async function onRequestDelete({ params, env }) {
   let path;
   try {
     path = filePath(env, params.name);
