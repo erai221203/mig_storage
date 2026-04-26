@@ -11,12 +11,13 @@ export async function listFiles() {
 }
 
 export async function uploadFile(file, options = {}) {
+  const fd = new FormData();
+  fd.append("file", file);
+
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", "/api/upload");
     xhr.setRequestHeader("x-admin-password", getPassword());
-    xhr.setRequestHeader("content-type", file.type || "application/octet-stream");
-    xhr.setRequestHeader("x-file-name", encodeURIComponent(file.name));
 
     xhr.upload.onprogress = (event) => {
       if (!event.lengthComputable || typeof options.onProgress !== "function") return;
@@ -39,7 +40,7 @@ export async function uploadFile(file, options = {}) {
     };
 
     xhr.onerror = () => {
-      reject(new Error("Upload failed (network reset/blocked). Please retry."));
+      reject(new Error("Upload failed (network error)"));
     };
 
     xhr.onabort = () => {
@@ -54,7 +55,7 @@ export async function uploadFile(file, options = {}) {
       options.signal.addEventListener("abort", () => xhr.abort(), { once: true });
     }
 
-    xhr.send(file);
+    xhr.send(fd);
   });
 }
 
