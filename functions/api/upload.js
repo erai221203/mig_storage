@@ -7,6 +7,8 @@ import {
   json,
 } from "../_lib/github.js";
 
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+
 // POST /api/upload  (multipart/form-data with field "file")
 export async function onRequestPost({ request, env }) {
   let form;
@@ -19,6 +21,14 @@ export async function onRequestPost({ request, env }) {
   const file = form.get("file");
   if (!(file instanceof File)) {
     return json({ error: "Missing 'file' field" }, { status: 400 });
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return json(
+      {
+        error: `File too large. Max allowed is 25 MB, got ${(file.size / (1024 * 1024)).toFixed(1)} MB.`,
+      },
+      { status: 413 }
+    );
   }
 
   const name = (form.get("name") || file.name || "upload.bin").toString();

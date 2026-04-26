@@ -9,6 +9,8 @@ import {
   downloadUrl,
 } from "../api.js";
 
+const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
+
 export default function AdminPage() {
   const [pw, setPw] = useState("");
   const [hasPw, setHasPw] = useState(Boolean(getPassword()));
@@ -44,6 +46,13 @@ export default function AdminPage() {
   const runUpload = useCallback(
     async (selectedFile) => {
       if (!selectedFile) return;
+      if (selectedFile.size > MAX_UPLOAD_BYTES) {
+        setUploadStatus({
+          msg: `File too large. Max allowed is 25 MB, selected ${(selectedFile.size / (1024 * 1024)).toFixed(1)} MB.`,
+          error: true,
+        });
+        return;
+      }
       if (!getPassword()) {
         setUploadStatus({ msg: "Set the admin password first.", error: true });
         return;

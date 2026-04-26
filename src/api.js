@@ -40,7 +40,11 @@ export async function uploadFile(file, options = {}) {
     };
 
     xhr.onerror = () => {
-      reject(new Error("Upload failed (network error)"));
+      reject(
+        new Error(
+          "Upload failed (network reset/blocked). Try a smaller file (<= 25 MB) or retry."
+        )
+      );
     };
 
     xhr.onabort = () => {
