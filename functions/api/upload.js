@@ -7,31 +7,39 @@ import {
   json,
 } from "../_lib/github.js";
 
-const MAX_UPLOAD_BYTES = 25 * 1024 * 1024;
-
-// POST /api/upload  (multipart/form-data with field "file")
+// POST /api/upload
+// Preferred: raw file body + x-file-name header.
+// Fallback: multipart/form-data with field "file" for compatibility.
 export async function onRequestPost({ request, env }) {
-  let form;
-  try {
-    form = await request.formData();
-  } catch {
-    return json({ error: "Expected multipart/form-data" }, { status: 400 });
+  const rawName = request.headers.get("x-file-name");
+  let name = "";
+  let buf;
+  let fileSize = 0;
+
+  if (rawName) {
+    try {
+      name = decodeURIComponent(rawName);
+    } catch {
+      name = rawName;
+    }
+    buf = await request.arrayBuffer();
+    fileSize = buf.byteLength;
+  } else {
+    let form;
+    try {
+      form = await request.formData();
+    } catch {
+      return json({ error: "Expected file body or multipart/form-data" }, { status: 400 });
+    }
+    const file = form.get("file");
+    if (!(file instanceof File)) {
+      return json({ error: "Missing 'file' field" }, { status: 400 });
+    }
+    name = (form.get("name") || file.name || "upload.bin").toString();
+    buf = await file.arrayBuffer();
+    fileSize = file.size;
   }
 
-  const file = form.get("file");
-  if (!(file instanceof File)) {
-    return json({ error: "Missing 'file' field" }, { status: 400 });
-  }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return json(
-      {
-        error: `File too large. Max allowed is 25 MB, got ${(file.size / (1024 * 1024)).toFixed(1)} MB.`,
-      },
-      { status: 413 }
-    );
-  }
-
-  const name = (form.get("name") || file.name || "upload.bin").toString();
   let path;
   try {
     path = filePath(env, name);
@@ -39,7 +47,6 @@ export async function onRequestPost({ request, env }) {
     return json({ error: e.message }, { status: 400 });
   }
 
-  const buf = await file.arrayBuffer();
   const content = bufferToBase64(buf);
 
   const branch = env.GITHUB_BRANCH || "main";
@@ -71,8 +78,8 @@ export async function onRequestPost({ request, env }) {
     ok: true,
     name: path.split("/").pop(),
     path,
-    size: file.size,
+    size: fileSize,
     sha: data.content?.sha,
-    download_url: `/api/download/${encodeURIComponent(path.split("/").pop())}`,
+    download_url: `/api/download?name=${encodeURIComponent(path.split("/").pop())}`,
   });
 }
