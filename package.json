@@ -1,5 +1,5 @@
 {
-  "name": "github-file-portal",
+  "name": "migrator",
   "version": "1.0.0",
   "private": true,
   "description": "React admin portal to upload/download files stored in a GitHub repo, deployed on Cloudflare Pages.",
