@@ -6,10 +6,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm install --include=optional && vite build",
     "preview": "vite preview",
     "pages:dev": "npm run build && wrangler pages dev dist --compatibility-date=2025-01-01",
-    "deploy": "npm run build"
+    "deploy": "wrangler pages deploy dist --project-name=mig-storage --commit-dirty=true"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -19,7 +19,7 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^5.4.10",
-    "wrangler": "^3.90.0"
+    "wrangler": "^4.0.0"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "*"
