@@ -4,7 +4,7 @@
  * Uses the same CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID that wrangler uses.
  */
 
-const PROJECT_NAME = "migrator";
+const PROJECT_NAME = "mig-portal";
 const PRODUCTION_BRANCH = "main";
 
 const token = process.env.CLOUDFLARE_API_TOKEN;
