@@ -27,14 +27,6 @@ export async function onRequestPost({ request, env }) {
     return json({ error: "Missing 'file' field" }, { status: 400 });
   }
 
-  // GitHub Contents API limit is 100MB; recommend <25MB.
-  if (file.size > 25 * 1024 * 1024) {
-    return json(
-      { error: "File too large. GitHub Contents API limit is ~25MB." },
-      { status: 413 }
-    );
-  }
-
   const name = (form.get("name") || file.name || "upload.bin").toString();
   let path;
   try {

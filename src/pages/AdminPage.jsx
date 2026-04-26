@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   getPassword,
   setPassword,
@@ -17,6 +17,7 @@ export default function AdminPage() {
   const [files, setFiles] = useState([]);
   const [listError, setListError] = useState("");
   const [busy, setBusy] = useState(false);
+  const uploadAbortRef = useRef(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -31,6 +32,12 @@ export default function AdminPage() {
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    return () => {
+      uploadAbortRef.current?.abort();
+    };
+  }, []);
 
   const onSaveAuth = () => {
     if (!pw.trim()) return;
@@ -53,17 +60,28 @@ export default function AdminPage() {
     }
     setBusy(true);
     setUploadStatus({ msg: `Uploading ${file.name}…`, error: false });
+    const controller = new AbortController();
+    uploadAbortRef.current = controller;
     try {
-      const data = await uploadFile(file);
+      const data = await uploadFile(file, { signal: controller.signal });
       setUploadStatus({ msg: `Uploaded: ${data.name}`, error: false });
       setFile(null);
       e.target.reset();
       await refresh();
     } catch (err) {
-      setUploadStatus({ msg: `Error: ${err.message}`, error: true });
+      if (err?.name === "AbortError") {
+        setUploadStatus({ msg: "Upload cancelled.", error: true });
+      } else {
+        setUploadStatus({ msg: `Error: ${err.message}`, error: true });
+      }
     } finally {
+      uploadAbortRef.current = null;
       setBusy(false);
     }
+  };
+
+  const onCancelUpload = () => {
+    uploadAbortRef.current?.abort();
   };
 
   const onDelete = async (name) => {
@@ -114,6 +132,11 @@ export default function AdminPage() {
           <button type="submit" disabled={busy}>
             {busy ? "Uploading…" : "Upload to GitHub"}
           </button>
+          {busy && (
+            <button type="button" className="ghost" onClick={onCancelUpload}>
+              Cancel upload
+            </button>
+          )}
         </form>
         {uploadStatus.msg && (
           <p

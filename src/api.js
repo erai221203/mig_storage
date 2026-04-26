@@ -10,13 +10,14 @@ export async function listFiles() {
   return r.json();
 }
 
-export async function uploadFile(file) {
+export async function uploadFile(file, options = {}) {
   const fd = new FormData();
   fd.append("file", file);
   const r = await fetch("/api/upload", {
     method: "POST",
     headers: { "x-admin-password": getPassword() },
     body: fd,
+    signal: options.signal,
   });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || `Upload failed (${r.status})`);
