@@ -40,19 +40,6 @@ export default function AdminPage() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!busy) return undefined;
-
-    const onBeforeUnload = (event) => {
-      // Ask the browser to confirm before reload/close while uploading.
-      event.preventDefault();
-      event.returnValue = "";
-    };
-
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [busy]);
-
   const onSaveAuth = () => {
     if (!pw.trim()) return;
     setPassword(pw.trim());
