@@ -13,6 +13,7 @@ const DB_NAME = "portal-upload-recovery";
 const DB_STORE = "pending";
 const DB_KEY = "active-upload";
 const RESUME_FLAG = "upload-should-resume";
+const MAX_RECOVERY_SIZE_BYTES = 10 * 1024 * 1024;
 
 function openUploadDb() {
   return new Promise((resolve, reject) => {
@@ -30,6 +31,10 @@ function openUploadDb() {
 
 async function savePendingUpload(file) {
   if (!file) return;
+  if (file.size > MAX_RECOVERY_SIZE_BYTES) {
+    await clearPendingUpload();
+    return false;
+  }
   const db = await openUploadDb();
   await new Promise((resolve, reject) => {
     const tx = db.transaction(DB_STORE, "readwrite");
@@ -44,6 +49,7 @@ async function savePendingUpload(file) {
     tx.onerror = () => reject(tx.error || new Error("Failed to save upload"));
   });
   db.close();
+  return true;
 }
 
 async function getPendingUpload() {
@@ -112,7 +118,11 @@ export default function AdminPage() {
 
       setBusy(true);
       setUploadPercent(0);
-      sessionStorage.setItem(RESUME_FLAG, "1");
+      if (selectedFile.size <= MAX_RECOVERY_SIZE_BYTES) {
+        sessionStorage.setItem(RESUME_FLAG, "1");
+      } else {
+        sessionStorage.removeItem(RESUME_FLAG);
+      }
       setUploadStatus({
         msg: fromRecovery
           ? `Resuming ${selectedFile.name}…`
@@ -246,7 +256,20 @@ export default function AdminPage() {
       sessionStorage.removeItem(RESUME_FLAG);
       return;
     }
-    await savePendingUpload(selected);
+    savePendingUpload(selected)
+      .then((saved) => {
+        if (saved) return;
+        setUploadStatus({
+          msg: "Large file selected. Upload continues normally, but auto-resume after refresh is disabled.",
+          error: false,
+        });
+      })
+      .catch(() => {
+        setUploadStatus({
+          msg: "Could not enable auto-resume for this file. Upload can still continue.",
+          error: true,
+        });
+      });
   };
 
   const onDelete = async (name) => {
