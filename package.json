@@ -9,7 +9,7 @@
     "build": "npm install --include=optional && vite build",
     "preview": "vite preview",
     "pages:dev": "npm run build && wrangler pages dev dist --compatibility-date=2025-01-01",
-    "deploy": "wrangler pages deploy dist --project-name=migrator --commit-dirty=true --create-project"
+    "deploy": "node scripts/create-cf-project.js && wrangler pages deploy dist --project-name=migrator --commit-dirty=true"
   },
   "dependencies": {
     "react": "^18.3.1",
