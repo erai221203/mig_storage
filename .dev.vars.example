@@ -1,0 +1,7 @@
+# Local dev: copy to .dev.vars and fill values. DO NOT COMMIT .dev.vars
+GITHUB_TOKEN=ghp_xxx
+GITHUB_OWNER=your-username
+GITHUB_REPO=file-storage
+GITHUB_BRANCH=main
+GITHUB_DIR=uploads
+ADMIN_PASSWORD=change-me

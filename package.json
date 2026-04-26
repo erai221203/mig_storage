@@ -1,0 +1,24 @@
+{
+  "name": "github-file-portal",
+  "version": "1.0.0",
+  "private": true,
+  "description": "React admin portal to upload/download files stored in a GitHub repo, deployed on Cloudflare Pages.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "pages:dev": "npm run build && wrangler pages dev dist --compatibility-date=2025-01-01",
+    "deploy": "npm run build && wrangler pages deploy dist"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^5.4.10",
+    "wrangler": "^3.90.0"
+  }
+}

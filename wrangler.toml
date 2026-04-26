@@ -1,0 +1,12 @@
+name = "github-file-portal"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "dist"
+
+# Set these as Pages project secrets in the Cloudflare dashboard
+# (Settings -> Environment variables -> Production / Preview):
+#   GITHUB_TOKEN     - PAT with "Contents: read & write" on the target repo
+#   GITHUB_OWNER     - e.g. "your-username"
+#   GITHUB_REPO      - e.g. "file-storage"
+#   GITHUB_BRANCH    - e.g. "main"
+#   GITHUB_DIR       - subfolder inside the repo, e.g. "uploads"
+#   ADMIN_PASSWORD   - password required to upload / delete
