@@ -17,6 +17,7 @@ export default function AdminPage() {
   const [files, setFiles] = useState([]);
   const [listError, setListError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
   const uploadAbortRef = useRef(null);
 
   const refresh = useCallback(async () => {
@@ -59,11 +60,16 @@ export default function AdminPage() {
       return;
     }
     setBusy(true);
+    setUploadPercent(0);
     setUploadStatus({ msg: `Uploading ${file.name}…`, error: false });
     const controller = new AbortController();
     uploadAbortRef.current = controller;
     try {
-      const data = await uploadFile(file, { signal: controller.signal });
+      const data = await uploadFile(file, {
+        signal: controller.signal,
+        onProgress: (percent) => setUploadPercent(percent),
+      });
+      setUploadPercent(100);
       setUploadStatus({ msg: `Uploaded: ${data.name}`, error: false });
       setFile(null);
       e.target.reset();
@@ -77,6 +83,7 @@ export default function AdminPage() {
     } finally {
       uploadAbortRef.current = null;
       setBusy(false);
+      setUploadPercent(0);
     }
   };
 
@@ -129,8 +136,13 @@ export default function AdminPage() {
             required
             onChange={(e) => setFile(e.target.files?.[0] || null)}
           />
-          <button type="submit" disabled={busy}>
-            {busy ? "Uploading…" : "Upload to GitHub"}
+          <button
+            type="submit"
+            disabled={busy}
+            className={busy ? "upload-progress-btn" : undefined}
+            style={busy ? { "--upload-progress": `${uploadPercent}%` } : undefined}
+          >
+            {busy ? `Uploading ${uploadPercent}%` : "Upload to GitHub"}
           </button>
           {busy && (
             <button type="button" className="ghost" onClick={onCancelUpload}>

@@ -13,15 +13,50 @@ export async function listFiles() {
 export async function uploadFile(file, options = {}) {
   const fd = new FormData();
   fd.append("file", file);
-  const r = await fetch("/api/upload", {
-    method: "POST",
-    headers: { "x-admin-password": getPassword() },
-    body: fd,
-    signal: options.signal,
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/upload");
+    xhr.setRequestHeader("x-admin-password", getPassword());
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable || typeof options.onProgress !== "function") return;
+      const percent = Math.min(100, Math.round((event.loaded / event.total) * 100));
+      options.onProgress(percent);
+    };
+
+    xhr.onload = () => {
+      let data = {};
+      try {
+        data = JSON.parse(xhr.responseText || "{}");
+      } catch {
+        data = {};
+      }
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(data);
+        return;
+      }
+      reject(new Error(data.error || `Upload failed (${xhr.status})`));
+    };
+
+    xhr.onerror = () => {
+      reject(new Error("Upload failed (network error)"));
+    };
+
+    xhr.onabort = () => {
+      reject(new DOMException("Upload aborted", "AbortError"));
+    };
+
+    if (options.signal) {
+      if (options.signal.aborted) {
+        xhr.abort();
+        return;
+      }
+      options.signal.addEventListener("abort", () => xhr.abort(), { once: true });
+    }
+
+    xhr.send(fd);
   });
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(data.error || `Upload failed (${r.status})`);
-  return data;
 }
 
 export async function deleteFile(name) {
