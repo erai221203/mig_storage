@@ -9,66 +9,6 @@ import {
   downloadUrl,
 } from "../api.js";
 
-const DB_NAME = "portal-upload-recovery";
-const DB_STORE = "pending";
-const DB_KEY = "active-upload";
-const RESUME_FLAG = "upload-should-resume";
-
-function openUploadDb() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, 1);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains(DB_STORE)) {
-        db.createObjectStore(DB_STORE);
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error || new Error("Failed to open IndexedDB"));
-  });
-}
-
-async function savePendingUpload(file) {
-  if (!file) return;
-  const db = await openUploadDb();
-  await new Promise((resolve, reject) => {
-    const tx = db.transaction(DB_STORE, "readwrite");
-    tx.objectStore(DB_STORE).put(
-      {
-        file,
-        updatedAt: Date.now(),
-      },
-      DB_KEY
-    );
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error || new Error("Failed to save upload"));
-  });
-  db.close();
-}
-
-async function getPendingUpload() {
-  const db = await openUploadDb();
-  const value = await new Promise((resolve, reject) => {
-    const tx = db.transaction(DB_STORE, "readonly");
-    const req = tx.objectStore(DB_STORE).get(DB_KEY);
-    req.onsuccess = () => resolve(req.result || null);
-    req.onerror = () => reject(req.error || new Error("Failed to read upload"));
-  });
-  db.close();
-  return value?.file || null;
-}
-
-async function clearPendingUpload() {
-  const db = await openUploadDb();
-  await new Promise((resolve, reject) => {
-    const tx = db.transaction(DB_STORE, "readwrite");
-    tx.objectStore(DB_STORE).delete(DB_KEY);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error || new Error("Failed to clear upload"));
-  });
-  db.close();
-}
-
 export default function AdminPage() {
   const [pw, setPw] = useState("");
   const [hasPw, setHasPw] = useState(Boolean(getPassword()));
@@ -78,7 +18,6 @@ export default function AdminPage() {
   const [listError, setListError] = useState("");
   const [busy, setBusy] = useState(false);
   const [uploadPercent, setUploadPercent] = useState(0);
-  const [recovering, setRecovering] = useState(true);
   const uploadAbortRef = useRef(null);
   const formRef = useRef(null);
 
@@ -103,7 +42,7 @@ export default function AdminPage() {
   }, []);
 
   const runUpload = useCallback(
-    async (selectedFile, { fromRecovery = false } = {}) => {
+    async (selectedFile) => {
       if (!selectedFile) return;
       if (!getPassword()) {
         setUploadStatus({ msg: "Set the admin password first.", error: true });
@@ -112,11 +51,8 @@ export default function AdminPage() {
 
       setBusy(true);
       setUploadPercent(0);
-      sessionStorage.setItem(RESUME_FLAG, "1");
       setUploadStatus({
-        msg: fromRecovery
-          ? `Resuming ${selectedFile.name}…`
-          : `Uploading ${selectedFile.name}…`,
+        msg: `Uploading ${selectedFile.name}…`,
         error: false,
       });
 
@@ -132,14 +68,10 @@ export default function AdminPage() {
         setUploadStatus({ msg: `Uploaded: ${data.name}`, error: false });
         setFile(null);
         formRef.current?.reset();
-        await clearPendingUpload();
-        sessionStorage.removeItem(RESUME_FLAG);
         await refresh();
       } catch (err) {
         if (err?.name === "AbortError") {
           setUploadStatus({ msg: "Upload cancelled.", error: true });
-          await clearPendingUpload();
-          sessionStorage.removeItem(RESUME_FLAG);
         } else {
           setUploadStatus({ msg: `Error: ${err.message}`, error: true });
         }
@@ -151,40 +83,6 @@ export default function AdminPage() {
     },
     [refresh]
   );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const recoverAndResume = async () => {
-      try {
-        const pendingFile = await getPendingUpload();
-        if (cancelled || !pendingFile) return;
-
-        setFile(pendingFile);
-        const shouldResume = sessionStorage.getItem(RESUME_FLAG) === "1";
-        if (!shouldResume) {
-          setUploadStatus({
-            msg: `Recovered pending file: ${pendingFile.name}`,
-            error: false,
-          });
-          return;
-        }
-        await runUpload(pendingFile, { fromRecovery: true });
-      } catch {
-        setUploadStatus({
-          msg: "Could not restore pending upload.",
-          error: true,
-        });
-      } finally {
-        if (!cancelled) setRecovering(false);
-      }
-    };
-
-    recoverAndResume();
-    return () => {
-      cancelled = true;
-    };
-  }, [runUpload]);
 
   useEffect(() => {
     if (!busy) return undefined;
@@ -238,15 +136,9 @@ export default function AdminPage() {
     uploadAbortRef.current?.abort();
   };
 
-  const onFileChange = async (e) => {
+  const onFileChange = (e) => {
     const selected = e.target.files?.[0] || null;
     setFile(selected);
-    if (!selected) {
-      await clearPendingUpload();
-      sessionStorage.removeItem(RESUME_FLAG);
-      return;
-    }
-    await savePendingUpload(selected);
   };
 
   const onDelete = async (name) => {
@@ -291,7 +183,7 @@ export default function AdminPage() {
         <form ref={formRef} onSubmit={onUpload}>
           <input
             type="file"
-            required={!file}
+            required
             onChange={onFileChange}
           />
           <button
@@ -316,7 +208,6 @@ export default function AdminPage() {
             {uploadStatus.msg}
           </p>
         )}
-        {recovering && <p className="muted">Checking for interrupted upload…</p>}
       </section>
 
       <section className="card">
