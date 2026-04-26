@@ -40,6 +40,36 @@ export default function AdminPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!busy) return undefined;
+
+    const onBeforeUnload = (event) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    const onKeyDown = (event) => {
+      const isRefreshKey =
+        event.key === "F5" ||
+        ((event.ctrlKey || event.metaKey) &&
+          event.key.toLowerCase() === "r");
+
+      if (!isRefreshKey) return;
+
+      const leave = window.confirm(
+        "Upload is in progress. Refreshing now will interrupt it. Continue?"
+      );
+      if (!leave) event.preventDefault();
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [busy]);
+
   const onSaveAuth = () => {
     if (!pw.trim()) return;
     setPassword(pw.trim());
