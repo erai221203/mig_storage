@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "pages:dev": "npm run build && wrangler pages dev dist --compatibility-date=2025-01-01",
-    "deploy": "npm run build && wrangler pages deploy dist"
+    "deploy": "npm run build"
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -19,6 +19,6 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^5.4.10",
-    "wrangler": "^3.90.0"
+    "wrangler": "^4.85.0"
   }
 }
