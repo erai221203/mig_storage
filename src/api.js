@@ -60,13 +60,12 @@ export async function uploadFile(file, options = {}) {
 }
 
 export async function deleteFile(name) {
-  const r = await fetch(`/api/download/${encodeURIComponent(name)}`, {
+  const r = await fetch(`/api/download?name=${encodeURIComponent(name)}`, {
     method: "DELETE",
-    headers: { "x-admin-password": getPassword() },
   });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || `Delete failed (${r.status})`);
   return data;
 }
 
-export const downloadUrl = (name) => `/api/download/${encodeURIComponent(name)}`;
+export const downloadUrl = (name) => `/api/download?name=${encodeURIComponent(name)}`;

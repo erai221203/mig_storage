@@ -24,7 +24,7 @@ export async function onRequestGet({ env }) {
       size: e.size,
       path: e.path,
       sha: e.sha,
-      download_url: `/api/download/${encodeURIComponent(e.name)}`,
+      download_url: `/api/download?name=${encodeURIComponent(e.name)}`,
     }));
 
   return json(files);
