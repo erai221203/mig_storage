@@ -11,7 +11,7 @@ function Layout({ children }) {
       <header>
         <h1>File Portal</h1>
         <nav>
-          <NavLink to="/" end>Admin / Upload</NavLink>
+          <NavLink to="/" end>Home</NavLink>
           <NavLink to="/files">Downloads</NavLink>
         </nav>
       </header>
