@@ -4,6 +4,7 @@ import {
   filePath,
   getFileSha,
   json,
+  requireAdmin,
 } from "../_lib/github.js";
 
 function getNameFromRequest(request) {
@@ -73,6 +74,9 @@ export async function onRequestGet({ request, env }) {
 
 // DELETE /api/download?name=<filename> -> deletes file
 export async function onRequestDelete({ request, env }) {
+  const authError = requireAdmin(request, env);
+  if (authError) return authError;
+
   const { path, error } = resolvePath(request, env);
   if (error) return error;
 

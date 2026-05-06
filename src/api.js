@@ -13,11 +13,13 @@ export async function listFiles() {
 export async function uploadFile(file, options = {}) {
   const fd = new FormData();
   fd.append("file", file);
+  const password = getPassword();
 
   const uploadWithXhr = () =>
     new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", "/api/upload");
+      xhr.setRequestHeader("x-admin-password", password);
       xhr.timeout = options.timeoutMs ?? 10 * 60 * 1000;
 
       xhr.upload.onprogress = (event) => {
@@ -66,6 +68,7 @@ export async function uploadFile(file, options = {}) {
   const uploadWithFetch = async () => {
     const r = await fetch("/api/upload", {
       method: "POST",
+      headers: { "x-admin-password": password },
       body: fd,
       signal: options.signal,
     });
@@ -87,6 +90,7 @@ export async function uploadFile(file, options = {}) {
 export async function deleteFile(name) {
   const r = await fetch(`/api/download?name=${encodeURIComponent(name)}`, {
     method: "DELETE",
+    headers: { "x-admin-password": getPassword() },
   });
   const data = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(data.error || `Delete failed (${r.status})`);

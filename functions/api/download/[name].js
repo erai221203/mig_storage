@@ -4,6 +4,7 @@ import {
   filePath,
   getFileSha,
   json,
+  requireAdmin,
 } from "../../_lib/github.js";
 
 // GET    /api/download/:name  -> streams file bytes back to the browser
@@ -62,7 +63,10 @@ export async function onRequestGet({ params, env }) {
   });
 }
 
-export async function onRequestDelete({ params, env }) {
+export async function onRequestDelete({ request, params, env }) {
+  const authError = requireAdmin(request, env);
+  if (authError) return authError;
+
   let path;
   try {
     path = filePath(env, params.name);

@@ -5,10 +5,14 @@ import {
   bufferToBase64,
   getFileSha,
   json,
+  requireAdmin,
 } from "../_lib/github.js";
 
 // POST /api/upload  (multipart/form-data with field "file")
 export async function onRequestPost({ request, env }) {
+  const authError = requireAdmin(request, env);
+  if (authError) return authError;
+
   let form;
   try {
     form = await request.formData();
