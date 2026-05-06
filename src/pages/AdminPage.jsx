@@ -7,7 +7,7 @@ import {
   listMessages,
   uploadFile,
   deleteFile,
-  downloadUrl,
+  downloadFile,
   sendMessage,
   deleteMessage,
 } from "../api.js";
@@ -177,6 +177,14 @@ export default function AdminPage() {
     }
   };
 
+  const onDownload = async (name) => {
+    try {
+      await downloadFile(name);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   const onSendMessage = async (e) => {
     e.preventDefault();
     const text = messageText.trim();
@@ -219,8 +227,8 @@ export default function AdminPage() {
       <section className="card">
         <h2>Admin login</h2>
         <p className="muted">
-          Enter the admin password to upload or delete files. The password is
-          kept only in your browser session.
+          Enter the admin password to upload, download, or delete files. The
+          password is kept only in your browser session.
         </p>
         <div className="row">
           <input
@@ -342,7 +350,9 @@ export default function AdminPage() {
                 <small className="muted">({(f.size / 1024).toFixed(1)} KB)</small>
               </span>
               <span className="actions">
-                <a className="btn" href={downloadUrl(f.name)}>Download</a>
+                <button type="button" onClick={() => onDownload(f.name)}>
+                  Download
+                </button>
                 <button
                   type="button"
                   className="danger"

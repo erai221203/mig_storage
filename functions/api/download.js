@@ -29,6 +29,9 @@ function resolvePath(request, env) {
 
 // GET /api/download?name=<filename> -> streams file bytes back to browser
 export async function onRequestGet({ request, env }) {
+  const authError = requireAdmin(request, env);
+  if (authError) return authError;
+
   const { path, error } = resolvePath(request, env);
   if (error) return error;
 

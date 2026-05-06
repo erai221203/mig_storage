@@ -105,6 +105,41 @@ export async function deleteFile(name) {
 
 export const downloadUrl = (name) => `/api/download?name=${encodeURIComponent(name)}`;
 
+function getOrAskPassword(action) {
+  const stored = getPassword();
+  if (stored) return stored;
+
+  const supplied = window.prompt(`Enter password to ${action}`);
+  const password = supplied?.trim() || "";
+  if (password) setPassword(password);
+  return password;
+}
+
+export async function downloadFile(name) {
+  const password = getOrAskPassword("download this file");
+  if (!password) throw new Error("Password is required to download files");
+
+  const r = await fetch(downloadUrl(name), {
+    headers: { "x-admin-password": password },
+  });
+
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({}));
+    if (r.status === 401) clearPassword();
+    throw new Error(data.error || `Download failed (${r.status})`);
+  }
+
+  const blob = await r.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+}
+
 export async function sendMessage(text) {
   const r = await fetch("/api/messages", {
     method: "POST",

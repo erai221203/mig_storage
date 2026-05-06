@@ -10,7 +10,10 @@ import {
 
 // GET    /api/download/:name  -> streams file bytes back to the browser
 // DELETE /api/download/:name  -> deletes file
-export async function onRequestGet({ params, env }) {
+export async function onRequestGet({ request, params, env }) {
+  const authError = requireAdmin(request, env);
+  if (authError) return authError;
+
   let path;
   try {
     if (isMessagesFileName(params.name)) {

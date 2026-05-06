@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { listFiles, listMessages, downloadUrl } from "../api.js";
+import { listFiles, listMessages, downloadFile } from "../api.js";
 
 function formatDate(value) {
   const date = new Date(value);
@@ -34,6 +34,14 @@ export default function DownloadsPage() {
     refresh();
   }, [refresh]);
 
+  const onDownload = async (name) => {
+    try {
+      await downloadFile(name);
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   return (
     <>
       <section className="card">
@@ -60,7 +68,7 @@ export default function DownloadsPage() {
 
       <section className="card">
         <h2>Available files</h2>
-        <p className="muted">Anyone with this link can download these files.</p>
+        <p className="muted">File downloads require the password.</p>
         <ul className="files">
           {loading && <li className="muted">Loading...</li>}
           {!loading && files.length === 0 && !error && (
@@ -72,7 +80,9 @@ export default function DownloadsPage() {
                 {f.name}{" "}
                 <small className="muted">({(f.size / 1024).toFixed(1)} KB)</small>
               </span>
-              <a className="btn" href={downloadUrl(f.name)}>Download</a>
+              <button type="button" onClick={() => onDownload(f.name)}>
+                Download
+              </button>
             </li>
           ))}
         </ul>
