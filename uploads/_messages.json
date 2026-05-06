@@ -1,11 +1,6 @@
 {
   "messages": [
     {
-      "id": "dd014e58-abd1-473c-8787-a5cb2008209c",
-      "text": "hi\ntime 11.02",
-      "created_at": "2026-05-06T05:32:05.768Z"
-    },
-    {
       "id": "139b9376-b3dc-4af0-8937-88f16b77a455",
       "text": "Failed to load resource: the server responded with a status of 401 ()Understand this error\n/api/upload:1  Failed to load resource: the server responded with a status of 401 ()",
       "created_at": "2026-05-06T05:32:14.778Z"
