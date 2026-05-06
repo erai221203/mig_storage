@@ -42,6 +42,12 @@ input[type="text"], input[type="password"], input[type="file"], textarea {
   border: 1px solid var(--border); border-radius: 8px;
   padding: 10px 12px; font: inherit;
 }
+input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  flex: 0 0 auto;
+}
 textarea {
   min-height: 110px;
   resize: vertical;
@@ -67,6 +73,27 @@ form.message-form {
   align-items: stretch;
   display: grid;
 }
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.checkline,
+.selectable {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.selectable {
+  flex: 1;
+}
+.selectable span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 ul.files { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; }
 ul.files li {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
@@ -86,6 +113,9 @@ ul.messages li {
   justify-content: space-between;
   gap: 10px;
 }
+.message-select {
+  align-items: flex-start;
+}
 .message-bubble {
   min-width: 0;
   flex: 1;
@@ -103,3 +133,15 @@ ul.messages li {
   max-width: 100%;
 }
 small { font-size: 12px; }
+
+@media (max-width: 560px) {
+  ul.files li,
+  ul.messages li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  ul.files li .actions {
+    flex-wrap: wrap;
+  }
+}

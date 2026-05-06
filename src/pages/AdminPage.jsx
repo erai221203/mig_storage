@@ -18,15 +18,23 @@ function formatDate(value) {
   return date.toLocaleString();
 }
 
+function plural(count, singular, pluralValue = `${singular}s`) {
+  return count === 1 ? singular : pluralValue;
+}
+
 export default function AdminPage() {
   const [pw, setPw] = useState("");
   const [hasPw, setHasPw] = useState(Boolean(getPassword()));
-  const [file, setFile] = useState(null);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadStatus, setUploadStatus] = useState({ msg: "", error: false });
   const [files, setFiles] = useState([]);
   const [listError, setListError] = useState("");
+  const [selectedFileNames, setSelectedFileNames] = useState([]);
+  const [bulkFileBusy, setBulkFileBusy] = useState(false);
   const [messages, setMessages] = useState([]);
   const [messagesError, setMessagesError] = useState("");
+  const [selectedMessageIds, setSelectedMessageIds] = useState([]);
+  const [bulkMessageBusy, setBulkMessageBusy] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [messageStatus, setMessageStatus] = useState({ msg: "", error: false });
   const [messageBusy, setMessageBusy] = useState(false);
@@ -61,14 +69,27 @@ export default function AdminPage() {
   }, [refresh, refreshMessages]);
 
   useEffect(() => {
+    setSelectedFileNames((selected) =>
+      selected.filter((name) => files.some((fileItem) => fileItem.name === name))
+    );
+  }, [files]);
+
+  useEffect(() => {
+    setSelectedMessageIds((selected) =>
+      selected.filter((id) => messages.some((message) => message.id === id))
+    );
+  }, [messages]);
+
+  useEffect(() => {
     return () => {
       uploadAbortRef.current?.abort();
     };
   }, []);
 
   const runUpload = useCallback(
-    async (selectedFile) => {
-      if (!selectedFile) return;
+    async (filesToUpload) => {
+      const batch = Array.from(filesToUpload || []);
+      if (batch.length === 0) return;
       if (!getPassword()) {
         setUploadStatus({ msg: "Set the admin password first.", error: true });
         return;
@@ -77,28 +98,68 @@ export default function AdminPage() {
       setBusy(true);
       setUploadPercent(0);
       setUploadStatus({
-        msg: `Uploading ${selectedFile.name}…`,
+        msg:
+          batch.length === 1
+            ? `Uploading ${batch[0].name}...`
+            : `Uploading 1 of ${batch.length}: ${batch[0].name}`,
         error: false,
       });
 
       const controller = new AbortController();
       uploadAbortRef.current = controller;
+      let uploaded = 0;
 
       try {
-        const data = await uploadFile(selectedFile, {
-          signal: controller.signal,
-          onProgress: (percent) => setUploadPercent(percent),
-        });
+        for (const currentFile of batch) {
+          setUploadStatus({
+            msg:
+              batch.length === 1
+                ? `Uploading ${currentFile.name}...`
+                : `Uploading ${uploaded + 1} of ${batch.length}: ${currentFile.name}`,
+            error: false,
+          });
+
+          await uploadFile(currentFile, {
+            signal: controller.signal,
+            onProgress: (percent) => {
+              const totalPercent = Math.round(
+                ((uploaded + percent / 100) / batch.length) * 100
+              );
+              setUploadPercent(Math.min(100, totalPercent));
+            },
+          });
+
+          uploaded += 1;
+        }
+
         setUploadPercent(100);
-        setUploadStatus({ msg: `Uploaded: ${data.name}`, error: false });
-        setFile(null);
+        setUploadStatus({
+          msg:
+            uploaded === 1
+              ? `Uploaded: ${batch[0].name}`
+              : `Uploaded ${uploaded} files.`,
+          error: false,
+        });
+        setSelectedFiles([]);
         formRef.current?.reset();
         await refresh();
       } catch (err) {
         if (err?.name === "AbortError") {
-          setUploadStatus({ msg: "Upload cancelled.", error: true });
+          setUploadStatus({
+            msg:
+              uploaded > 0
+                ? `Upload cancelled after ${uploaded} of ${batch.length} files.`
+                : "Upload cancelled.",
+            error: true,
+          });
         } else {
-          setUploadStatus({ msg: `Error: ${err.message}`, error: true });
+          setUploadStatus({
+            msg:
+              uploaded > 0
+                ? `Error after ${uploaded} of ${batch.length} files: ${err.message}`
+                : `Error: ${err.message}`,
+            error: true,
+          });
         }
       } finally {
         uploadAbortRef.current = null;
@@ -153,8 +214,8 @@ export default function AdminPage() {
 
   const onUpload = async (e) => {
     e.preventDefault();
-    if (!file) return;
-    await runUpload(file);
+    if (selectedFiles.length === 0) return;
+    await runUpload(selectedFiles);
   };
 
   const onCancelUpload = () => {
@@ -162,8 +223,7 @@ export default function AdminPage() {
   };
 
   const onFileChange = (e) => {
-    const selected = e.target.files?.[0] || null;
-    setFile(selected);
+    setSelectedFiles(Array.from(e.target.files || []));
   };
 
   const onDelete = async (name) => {
@@ -182,6 +242,43 @@ export default function AdminPage() {
       await downloadFile(name);
     } catch (err) {
       alert(err.message);
+    }
+  };
+
+  const toggleFileSelection = (name) => {
+    setSelectedFileNames((selected) =>
+      selected.includes(name)
+        ? selected.filter((selectedName) => selectedName !== name)
+        : [...selected, name]
+    );
+  };
+
+  const toggleAllFiles = () => {
+    setSelectedFileNames((selected) =>
+      selected.length === files.length ? [] : files.map((fileItem) => fileItem.name)
+    );
+  };
+
+  const onDeleteSelectedFiles = async () => {
+    const names = selectedFileNames;
+    if (names.length === 0) return;
+    if (!getPassword()) return alert("Set the admin password first.");
+    if (!confirm(`Delete ${names.length} selected ${plural(names.length, "file")}?`)) {
+      return;
+    }
+
+    setBulkFileBusy(true);
+    try {
+      for (const name of names) {
+        await deleteFile(name);
+      }
+      setSelectedFileNames([]);
+      await refresh();
+    } catch (err) {
+      alert(err.message);
+      await refresh();
+    } finally {
+      setBulkFileBusy(false);
     }
   };
 
@@ -222,13 +319,57 @@ export default function AdminPage() {
     }
   };
 
+  const toggleMessageSelection = (id) => {
+    setSelectedMessageIds((selected) =>
+      selected.includes(id)
+        ? selected.filter((selectedId) => selectedId !== id)
+        : [...selected, id]
+    );
+  };
+
+  const toggleAllMessages = () => {
+    setSelectedMessageIds((selected) =>
+      selected.length === messages.length
+        ? []
+        : messages.map((message) => message.id)
+    );
+  };
+
+  const onDeleteSelectedMessages = async () => {
+    const ids = selectedMessageIds;
+    if (ids.length === 0) return;
+    if (!getPassword()) return alert("Set the admin password first.");
+    if (!confirm(`Delete ${ids.length} selected ${plural(ids.length, "chat")}?`)) {
+      return;
+    }
+
+    setBulkMessageBusy(true);
+    try {
+      for (const id of ids) {
+        await deleteMessage(id);
+      }
+      setSelectedMessageIds([]);
+      await refreshMessages();
+    } catch (err) {
+      alert(err.message);
+      await refreshMessages();
+    } finally {
+      setBulkMessageBusy(false);
+    }
+  };
+
+  const allFilesSelected =
+    files.length > 0 && selectedFileNames.length === files.length;
+  const allMessagesSelected =
+    messages.length > 0 && selectedMessageIds.length === messages.length;
+
   return (
     <>
       <section className="card">
         <h2>Admin login</h2>
         <p className="muted">
-          Enter the admin password to upload, download, or delete files. The
-          password is kept only in your browser session.
+          Enter the admin password to upload, download, or delete files and
+          chats. The password is kept only in your browser session.
         </p>
         <div className="row">
           <input
@@ -249,16 +390,17 @@ export default function AdminPage() {
       </section>
 
       <section className="card">
-        <h2>Upload a file</h2>
+        <h2>Upload files</h2>
         <form ref={formRef} onSubmit={onUpload}>
           <input
             type="file"
+            multiple
             required
             onChange={onFileChange}
           />
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || selectedFiles.length === 0}
             className={busy ? "upload-progress-btn" : undefined}
             style={busy ? { "--upload-progress": `${uploadPercent}%` } : undefined}
           >
@@ -270,6 +412,11 @@ export default function AdminPage() {
             </button>
           )}
         </form>
+        {selectedFiles.length > 0 && !busy && (
+          <p className="muted">
+            {selectedFiles.length} {plural(selectedFiles.length, "file")} selected.
+          </p>
+        )}
         {uploadStatus.msg && (
           <p
             className="muted"
@@ -311,18 +458,46 @@ export default function AdminPage() {
             {messagesError}
           </p>
         )}
+        <div className="bulk-actions">
+          <label className="checkline">
+            <input
+              type="checkbox"
+              checked={allMessagesSelected}
+              disabled={messages.length === 0}
+              onChange={toggleAllMessages}
+            />
+            Select all chats
+          </label>
+          <button
+            type="button"
+            className="danger"
+            disabled={selectedMessageIds.length === 0 || bulkMessageBusy}
+            onClick={onDeleteSelectedMessages}
+          >
+            {bulkMessageBusy
+              ? "Deleting..."
+              : `Delete selected (${selectedMessageIds.length})`}
+          </button>
+        </div>
         <ul className="messages">
           {messages.length === 0 && !messagesError && (
             <li className="muted">No text messages yet.</li>
           )}
           {messages.map((message) => (
             <li key={message.id}>
-              <div className="message-bubble">
-                <p>{message.text}</p>
-                {message.created_at && (
-                  <small className="muted">{formatDate(message.created_at)}</small>
-                )}
-              </div>
+              <label className="selectable message-select">
+                <input
+                  type="checkbox"
+                  checked={selectedMessageIds.includes(message.id)}
+                  onChange={() => toggleMessageSelection(message.id)}
+                />
+                <div className="message-bubble">
+                  <p>{message.text}</p>
+                  {message.created_at && (
+                    <small className="muted">{formatDate(message.created_at)}</small>
+                  )}
+                </div>
+              </label>
               <button
                 type="button"
                 className="danger"
@@ -337,7 +512,28 @@ export default function AdminPage() {
 
       <section className="card">
         <h2>Files in repo</h2>
-        <button type="button" onClick={refresh}>Refresh</button>
+        <div className="bulk-actions">
+          <button type="button" onClick={refresh}>Refresh</button>
+          <label className="checkline">
+            <input
+              type="checkbox"
+              checked={allFilesSelected}
+              disabled={files.length === 0}
+              onChange={toggleAllFiles}
+            />
+            Select all files
+          </label>
+          <button
+            type="button"
+            className="danger"
+            disabled={selectedFileNames.length === 0 || bulkFileBusy}
+            onClick={onDeleteSelectedFiles}
+          >
+            {bulkFileBusy
+              ? "Deleting..."
+              : `Delete selected (${selectedFileNames.length})`}
+          </button>
+        </div>
         {listError && <p className="muted" style={{ color: "var(--danger)" }}>{listError}</p>}
         <ul className="files">
           {files.length === 0 && !listError && (
@@ -345,10 +541,17 @@ export default function AdminPage() {
           )}
           {files.map((f) => (
             <li key={f.sha || f.name}>
-              <span>
-                {f.name}{" "}
-                <small className="muted">({(f.size / 1024).toFixed(1)} KB)</small>
-              </span>
+              <label className="selectable">
+                <input
+                  type="checkbox"
+                  checked={selectedFileNames.includes(f.name)}
+                  onChange={() => toggleFileSelection(f.name)}
+                />
+                <span>
+                  {f.name}{" "}
+                  <small className="muted">({(f.size / 1024).toFixed(1)} KB)</small>
+                </span>
+              </label>
               <span className="actions">
                 <button type="button" onClick={() => onDownload(f.name)}>
                   Download
