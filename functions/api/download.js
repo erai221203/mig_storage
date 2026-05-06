@@ -2,6 +2,7 @@ import {
   ghHeaders,
   repoBase,
   filePath,
+  isMessagesFileName,
   getFileSha,
   json,
   requireAdmin,
@@ -15,6 +16,9 @@ function resolvePath(request, env) {
   const name = getNameFromRequest(request);
   if (!name) {
     return { error: json({ error: "Missing 'name' query parameter" }, { status: 400 }) };
+  }
+  if (isMessagesFileName(name)) {
+    return { error: json({ error: "Not found" }, { status: 404 }) };
   }
   try {
     return { path: filePath(env, name) };

@@ -25,6 +25,21 @@ export function filePath(env, name) {
   return dir ? `${dir}/${safe}` : safe;
 }
 
+export const MESSAGES_FILE = "_messages.json";
+
+export function messagesPath(env) {
+  const dir = dirPath(env);
+  return dir ? `${dir}/${MESSAGES_FILE}` : MESSAGES_FILE;
+}
+
+export function isMessagesFileName(name) {
+  try {
+    return sanitizeName(name) === MESSAGES_FILE;
+  } catch {
+    return false;
+  }
+}
+
 // Allow letters, digits, dot, dash, underscore, space. Strip path separators.
 export function sanitizeName(name) {
   const base = String(name).split(/[\\/]/).pop() || "";

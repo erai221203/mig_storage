@@ -2,6 +2,7 @@ import {
   ghHeaders,
   repoBase,
   filePath,
+  isMessagesFileName,
   getFileSha,
   json,
   requireAdmin,
@@ -12,6 +13,9 @@ import {
 export async function onRequestGet({ params, env }) {
   let path;
   try {
+    if (isMessagesFileName(params.name)) {
+      return json({ error: "Not found" }, { status: 404 });
+    }
     path = filePath(env, params.name);
   } catch (e) {
     return json({ error: e.message }, { status: 400 });
@@ -69,6 +73,9 @@ export async function onRequestDelete({ request, params, env }) {
 
   let path;
   try {
+    if (isMessagesFileName(params.name)) {
+      return json({ error: "Not found" }, { status: 404 });
+    }
     path = filePath(env, params.name);
   } catch (e) {
     return json({ error: e.message }, { status: 400 });

@@ -36,11 +36,15 @@ main { max-width: 760px; margin: 24px auto; padding: 0 16px; display: grid; gap:
 .card h2 { margin: 0 0 12px; font-size: 16px; }
 .muted { color: var(--muted); font-size: 13px; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; }
-input[type="text"], input[type="password"], input[type="file"] {
+input[type="text"], input[type="password"], input[type="file"], textarea {
   flex: 1; min-width: 0;
   background: #0c0f15; color: var(--text);
   border: 1px solid var(--border); border-radius: 8px;
   padding: 10px 12px; font: inherit;
+}
+textarea {
+  min-height: 110px;
+  resize: vertical;
 }
 button, .btn {
   background: var(--accent); color: white; border: 0;
@@ -59,10 +63,43 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 button.danger { background: var(--danger); }
 form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+form.message-form {
+  align-items: stretch;
+  display: grid;
+}
 ul.files { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 8px; }
 ul.files li {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
 }
 ul.files li .actions { display: flex; gap: 8px; }
+ul.messages {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 10px;
+}
+ul.messages li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.message-bubble {
+  min-width: 0;
+  flex: 1;
+  background: #0c0f15;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.message-bubble p {
+  margin: 0 0 6px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.public-messages .message-bubble {
+  max-width: 100%;
+}
 small { font-size: 12px; }

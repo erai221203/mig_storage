@@ -1,4 +1,4 @@
-import { ghHeaders, repoBase, dirPath, json } from "../_lib/github.js";
+import { MESSAGES_FILE, ghHeaders, repoBase, dirPath, json } from "../_lib/github.js";
 
 // GET /api/list  -> [{ name, size, path, download_url }]
 export async function onRequestGet({ env }) {
@@ -18,7 +18,7 @@ export async function onRequestGet({ env }) {
   const data = await res.json();
   const items = Array.isArray(data) ? data : [];
   const files = items
-    .filter((e) => e.type === "file")
+    .filter((e) => e.type === "file" && e.name !== MESSAGES_FILE)
     .map((e) => ({
       name: e.name,
       size: e.size,

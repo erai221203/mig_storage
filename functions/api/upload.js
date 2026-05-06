@@ -2,6 +2,7 @@ import {
   ghHeaders,
   repoBase,
   filePath,
+  isMessagesFileName,
   bufferToBase64,
   getFileSha,
   json,
@@ -26,6 +27,10 @@ export async function onRequestPost({ request, env }) {
   }
 
   const name = (form.get("name") || file.name || "upload.bin").toString();
+  if (isMessagesFileName(name)) {
+    return json({ error: "This file name is reserved" }, { status: 400 });
+  }
+
   let path;
   try {
     path = filePath(env, name);

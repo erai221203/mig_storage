@@ -4,10 +4,19 @@ import {
   setPassword,
   clearPassword,
   listFiles,
+  listMessages,
   uploadFile,
   deleteFile,
   downloadUrl,
+  sendMessage,
+  deleteMessage,
 } from "../api.js";
+
+function formatDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString();
+}
 
 export default function AdminPage() {
   const [pw, setPw] = useState("");
@@ -16,6 +25,11 @@ export default function AdminPage() {
   const [uploadStatus, setUploadStatus] = useState({ msg: "", error: false });
   const [files, setFiles] = useState([]);
   const [listError, setListError] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [messagesError, setMessagesError] = useState("");
+  const [messageText, setMessageText] = useState("");
+  const [messageStatus, setMessageStatus] = useState({ msg: "", error: false });
+  const [messageBusy, setMessageBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploadPercent, setUploadPercent] = useState(0);
   const uploadAbortRef = useRef(null);
@@ -31,9 +45,20 @@ export default function AdminPage() {
     }
   }, []);
 
+  const refreshMessages = useCallback(async () => {
+    try {
+      setMessagesError("");
+      const data = await listMessages();
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (e) {
+      setMessagesError(e.message);
+    }
+  }, []);
+
   useEffect(() => {
     refresh();
-  }, [refresh]);
+    refreshMessages();
+  }, [refresh, refreshMessages]);
 
   useEffect(() => {
     return () => {
@@ -152,6 +177,43 @@ export default function AdminPage() {
     }
   };
 
+  const onSendMessage = async (e) => {
+    e.preventDefault();
+    const text = messageText.trim();
+    if (!text) return;
+    if (!getPassword()) {
+      setMessageStatus({ msg: "Set the admin password first.", error: true });
+      return;
+    }
+
+    setMessageBusy(true);
+    setMessageStatus({ msg: "Sending text...", error: false });
+    try {
+      await sendMessage(text);
+      setMessageText("");
+      setMessageStatus({ msg: "Text shared.", error: false });
+      await refreshMessages();
+    } catch (err) {
+      setMessageStatus({ msg: `Error: ${err.message}`, error: true });
+    } finally {
+      setMessageBusy(false);
+    }
+  };
+
+  const onDeleteMessage = async (message) => {
+    if (!getPassword()) return alert("Set the admin password first.");
+    const preview =
+      message.text.length > 60 ? `${message.text.slice(0, 60)}...` : message.text;
+    if (!confirm(`Delete this text?\n\n${preview}`)) return;
+
+    try {
+      await deleteMessage(message.id);
+      await refreshMessages();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
   return (
     <>
       <section className="card">
@@ -208,6 +270,61 @@ export default function AdminPage() {
             {uploadStatus.msg}
           </p>
         )}
+      </section>
+
+      <section className="card">
+        <h2>Share text</h2>
+        <form className="message-form" onSubmit={onSendMessage}>
+          <textarea
+            placeholder="Type text to share"
+            value={messageText}
+            maxLength={10000}
+            onChange={(e) => setMessageText(e.target.value)}
+          />
+          <div className="row">
+            <button type="submit" disabled={messageBusy || !messageText.trim()}>
+              {messageBusy ? "Sending..." : "Send text"}
+            </button>
+            <button type="button" className="ghost" onClick={refreshMessages}>
+              Refresh
+            </button>
+          </div>
+        </form>
+        {messageStatus.msg && (
+          <p
+            className="muted"
+            style={{ color: messageStatus.error ? "var(--danger)" : undefined }}
+          >
+            {messageStatus.msg}
+          </p>
+        )}
+        {messagesError && (
+          <p className="muted" style={{ color: "var(--danger)" }}>
+            {messagesError}
+          </p>
+        )}
+        <ul className="messages">
+          {messages.length === 0 && !messagesError && (
+            <li className="muted">No text messages yet.</li>
+          )}
+          {messages.map((message) => (
+            <li key={message.id}>
+              <div className="message-bubble">
+                <p>{message.text}</p>
+                {message.created_at && (
+                  <small className="muted">{formatDate(message.created_at)}</small>
+                )}
+              </div>
+              <button
+                type="button"
+                className="danger"
+                onClick={() => onDeleteMessage(message)}
+              >
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="card">

@@ -10,6 +10,12 @@ export async function listFiles() {
   return r.json();
 }
 
+export async function listMessages() {
+  const r = await fetch("/api/messages");
+  if (!r.ok) throw new Error(`Messages failed: ${r.status}`);
+  return r.json();
+}
+
 export async function uploadFile(file, options = {}) {
   const fd = new FormData();
   fd.append("file", file);
@@ -98,3 +104,27 @@ export async function deleteFile(name) {
 }
 
 export const downloadUrl = (name) => `/api/download?name=${encodeURIComponent(name)}`;
+
+export async function sendMessage(text) {
+  const r = await fetch("/api/messages", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-admin-password": getPassword(),
+    },
+    body: JSON.stringify({ text }),
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `Message failed (${r.status})`);
+  return data;
+}
+
+export async function deleteMessage(id) {
+  const r = await fetch(`/api/messages?id=${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    headers: { "x-admin-password": getPassword() },
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(data.error || `Delete message failed (${r.status})`);
+  return data;
+}
