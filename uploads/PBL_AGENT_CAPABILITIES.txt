@@ -1,0 +1,846 @@
+================================================================================
+                      PBL AGENT - COMPREHENSIVE CAPABILITIES
+================================================================================
+
+A complete guide to what the PBL Agent can do, how it works, and what it produces.
+
+================================================================================
+1. WHAT PBL AGENT DOES (11-STEP AUTOMATED WORKFLOW)
+================================================================================
+
+The PBL Agent performs a complete end-to-end testing workflow autonomously:
+
+Step 1: Reads JIRA Ticket
+  - Extracts acceptance criteria and requirements
+  - Identifies test scope and stakeholders
+
+Step 2: Discovers Product
+  - Explores codebase to understand tech stack
+  - Identifies APIs, data sources, authentication mechanisms
+  - Maps data flows and system architecture
+
+Step 3: Designs Test Cases
+  - Creates exactly 1 test per acceptance criterion (AC-only mode)
+  - No exploratory testing, no edge cases beyond what ACs require
+  - Generates test-plan.md with prioritized test cases
+
+Step 4: Executes Frontend Tests
+  - Playwright automation for Next.js UI
+  - Tests live match pages, real-time updates, navigation
+  - Validates data display and UI responsiveness
+
+Step 5: Executes REST API Tests
+  - curl queries for SDAPI proxy endpoints
+  - Validates match data, events, statistics
+  - Checks response contracts and data integrity
+
+Step 6: Executes GraphQL Tests
+  - Apollo GraphQL queries, mutations, subscriptions
+  - Tests nested resolvers and schema validation
+  - Validates live statistics and real-time subscriptions
+
+Step 7: Executes WebSocket Tests
+  - SDDP real-time event streams
+  - Validates connection lifecycle and message ordering
+  - Tests live event push and reconnection behavior
+
+Step 8: Validates Data Consistency
+  - Cross-source comparison (SDAPI REST vs SDDP WebSocket)
+  - Ensures data freshness and proxy correctness
+  - Validates data matches across all sources
+
+Step 9: Runs Security Tests
+  - Auth0 authentication and token handling
+  - Role-based access control (Internal/Betting/Media)
+  - Tests IDOR vulnerabilities, injection attacks
+  - OWASP Top 10 baseline security checks
+
+Step 10: Analyzes Logs
+  - Backend logs inspection for hidden errors
+  - Detects unhandled exceptions and data leakage
+  - Identifies performance warnings and anomalies
+
+Step 11: Files Bugs & Reports
+  - Creates JIRA defects with severity classification
+  - Includes root cause analysis for failures
+  - Posts results summary comment to original ticket
+  - Generates comprehensive test report
+
+RESULT: Full test report in .qag/sessions/{SESSION-ID}/results.md
+        + JIRA comment with PASS/FAIL/CONDITIONAL status
+        + JIRA bugs filed for any failures
+
+================================================================================
+2. TESTING TYPES (11 SPECIALIZED SUB-AGENTS)
+================================================================================
+
+The PBL Agent coordinates 11 specialized sub-agents, each handling one test type:
+
+┌─ FRONTEND (FE) TESTING
+│  What It Tests:
+│    • Next.js UI components and pages
+│    • Live match pages and data displays
+│    • Real-time UI updates and animations
+│    • Navigation and page transitions
+│    • Auth0 authentication flows
+│    • Form interactions and validation
+│  How It Works:
+│    • Playwright browser automation
+│    • Simulates user interactions (clicks, typing, scrolling)
+│    • Validates visual state and content rendering
+│  Example Tests:
+│    • Match page loads with correct data
+│    • Real-time updates refresh without page reload
+│    • Auth0 login redirects to authenticated dashboard
+
+├─ REST API TESTING
+│  What It Tests:
+│    • SDAPI proxy endpoints (/api/stats-feed/*)
+│    • Match data retrieval and filtering
+│    • Event streams and event history
+│    • Statistics endpoints and calculations
+│    • Pagination and sorting
+│  How It Works:
+│    • curl HTTP requests
+│    • jq JSON response parsing
+│    • Status code validation
+│    • Response schema compliance
+│  Example Tests:
+│    • GET /api/stats-feed/matches returns valid match list
+│    • POST /api/stats-feed/events creates new event
+│    • Response contains required fields and correct data types
+
+├─ GraphQL API TESTING
+│  What It Tests:
+│    • Apollo GraphQL queries
+│    • Mutations and subscription operations
+│    • Nested resolvers and relationships
+│    • Schema introspection and validation
+│    • Partial response handling
+│  How It Works:
+│    • curl GraphQL queries
+│    • Validates query execution and results
+│    • Checks schema compliance
+│  Example Tests:
+│    • Query matches with nested statistics resolves correctly
+│    • Subscription to live events returns new data
+│    • Schema introspection returns valid type definitions
+
+├─ WEBSOCKET TESTING
+│  What It Tests:
+│    • SDDP real-time event streams
+│    • WebSocket connection lifecycle
+│    • Message ordering and delivery
+│    • Reconnection behavior on disconnect
+│    • Live event push notifications
+│    • Subscription management
+│  How It Works:
+│    • WebSocket client connections
+│    • Message queue validation
+│    • Connection state tracking
+│  Example Tests:
+│    • WebSocket connects and receives subscription confirmation
+│    • Live events arrive in correct order
+│    • Auto-reconnect succeeds after network interruption
+
+├─ DATA VALIDATION TESTING
+│  What It Tests:
+│    • Cross-source data consistency
+│    • SDAPI REST vs SDDP WebSocket sync
+│    • Data freshness and staleness
+│    • Proxy correctness and transformations
+│    • Data completeness across sources
+│  How It Works:
+│    • Parallel requests to multiple sources
+│    • Side-by-side data comparison
+│    • Timestamp and version validation
+│  Example Tests:
+│    • REST match data equals WebSocket match data
+│    • Event count matches across REST and WebSocket
+│    • Data timestamps are within acceptable drift
+
+├─ SECURITY TESTING
+│  What It Tests:
+│    • Auth0 authentication enforcement
+│    • Role-based access control (RBAC)
+│    • Internal/Trader: Full data access
+│    • Betting Client: Enhanced statistics only
+│    • Media Client: Standard data only
+│    • IDOR (Insecure Direct Object Reference)
+│    • Injection vulnerabilities (SQL, NoSQL, XSS)
+│    • CSRF protection
+│    • Rate limiting and throttling
+│  How It Works:
+│    • Different user role testing
+│    • Authorization header manipulation
+│    • Payload injection attempts
+│    • Request flooding for rate limit checks
+│  Example Tests:
+│    • Media Client cannot access Betting data
+│    • Admin endpoint rejects unauthorized request
+│    • SQL injection payload is sanitized
+│    • Rate limit enforced after N requests
+
+├─ LOG ANALYSIS
+│  What It Tests:
+│    • Backend application logs for errors
+│    • Unhandled exceptions and stack traces
+│    • Data leakage (passwords, tokens in logs)
+│    • Performance warnings (slow queries, memory)
+│    • Deprecation warnings
+│    • Error correlation with test failures
+│  How It Works:
+│    • Docker log collection
+│    • Log file inspection
+│    • Pattern matching for known error types
+│    • Timeline correlation with test execution
+│  Example Tests:
+│    • No ERROR level logs during test execution
+│    • No credentials logged to console
+│    • Query performance acceptable (< 100ms)
+
+├─ ROOT CAUSE ANALYSIS
+│  What It Tests:
+│    • Why tests failed
+│    • Root cause determination
+│    • Source code involvement
+│    • Configuration issues
+│    • Data flow breakpoints
+│    • Integration points
+│  How It Works:
+│    • Code analysis of failing components
+│    • Log correlation with failure points
+│    • Architecture review
+│    • Data flow tracing
+│  Example Tests:
+│    • Frontend test failed: REST API returned 500
+│    • REST API returned 500: Database connection timeout
+│    • Database timeout: Connection pool exhausted
+│    • Root Cause: N+1 query pattern in resolver
+
+├─ TEST DESIGN
+│  What It Tests:
+│    • AC-only test generation (exactly 1 test per AC)
+│    • No exploratory testing
+│    • No edge cases beyond AC scope
+│    • Acceptance criteria coverage
+│  How It Works:
+│    • Acceptance criteria extraction
+│    • Test case mapping (1 AC = 1 test)
+│    • Test prioritization
+│    • Test type identification
+│  Example Tests:
+│    • AC: "Match page should load data" → 1 test
+│    • AC: "Auth0 must enforce RBAC" → 1 test
+│    • AC: "WebSocket should handle disconnects" → 1 test
+
+├─ JIRA INTEGRATION
+│  What It Tests:
+│    • JIRA ticket reading (acceptance criteria extraction)
+│    • Bug creation (with severity, description, steps)
+│    • Results comment posting
+│    • Ticket linking
+│    • Status tracking
+│  How It Works:
+│    • Atlassian API calls
+│    • Structured bug reports
+│    • JIRA workflow transitions
+│  Example Tests:
+│    • Create bug: "Frontend test failed: Match data not loading"
+│    • Severity: HIGH
+│    • Root Cause: REST endpoint 500 error
+│    • Link to original ticket PBL-1234
+
+└─ REPORTING
+   What It Tests:
+     • Final test results aggregation
+     • Pass/Fail/Conditional status
+     • Evidence collection (screenshots, responses)
+     • Recommendation generation
+     • Report formatting
+   How It Works:
+     • Results.md generation
+     • Evidence organization
+     • Recommendation logic
+     • Markdown formatting
+   Example Tests:
+     • 5 tests passed, 1 failed
+     • OVERALL STATUS: CONDITIONAL (test and fix before merge)
+     • Root cause documented
+     • Screenshots and API responses included
+
+================================================================================
+3. PRODUCT COVERAGE (PBL/OPTA LIVE)
+================================================================================
+
+TECH STACK SUPPORTED:
+  • Frontend: Next.js (App Router migration in progress)
+  • HTTP Client: Axios
+  • GraphQL: Apollo
+  • Authentication: Auth0 (SSO) with Auth0 Actions
+  • REST API: SDAPI (Stats Perform Data API) via proxy
+  • WebSocket: SDDP (Stats Perform Data Distribution Platform)
+  • Infrastructure: AWS (CloudFront, S3, Lambda@Edge)
+
+DATA SOURCES:
+  • Primary: SDAPI (REST endpoints)
+  • Real-Time: SDDP (WebSocket subscriptions)
+  • Note: PBL has NO local database — all data from external APIs
+
+SPORTS COVERAGE:
+  • ✅ Soccer (Football) — Full coverage
+  • ✅ American Football — Full coverage
+  • ✅ Basketball — Full coverage
+  • ✅ Cricket — Full coverage
+  • ⚠️  Rugby — Widget support only
+  • ⚠️  Baseball — Widget support only
+
+USER ROLES:
+  • Internal/Trader: Full data access, all features
+  • Betting Client: Enhanced statistics, betting-focused data
+  • Media Client: Standard data, public information only
+
+FEATURES TESTED:
+
+  Live Match Pages
+    • Real-time data rendering
+    • Sport-specific layout validation
+    • Data refresh without page reload
+    • Live statistics updates
+    • Event timeline display
+
+  Authentication
+    • Auth0 login/logout flows
+    • SSO (Single Sign-On) validation
+    • Session management
+    • Token expiration handling
+    • Auth0 Actions execution
+
+  Role-Based Access Control (RBAC)
+    • Internal role full access
+    • Betting Client restricted access
+    • Media Client public-only access
+    • Data isolation between roles
+    • Permission enforcement
+
+  Real-Time Updates
+    • WebSocket subscription lifecycle
+    • Live event push delivery
+    • Message ordering validation
+    • Connection recovery on disconnect
+    • Subscription management
+
+  API Data Flow
+    • REST endpoint consistency
+    • GraphQL resolver performance
+    • Data transformation validation
+    • Pagination and filtering
+    • Error response handling
+
+  Data Integrity
+    • SDAPI/SDDP synchronization
+    • Cross-source data matching
+    • Data freshness validation
+    • Missing data detection
+    • Duplicate detection
+
+  Performance
+    • Large dataset handling
+    • Concurrent connection limits
+    • Query response time
+    • Memory usage
+    • Connection pool management
+
+  Security
+    • Auth bypass prevention
+    • Injection vulnerability defense
+    • CSRF token validation
+    • IDOR prevention
+    • Rate limiting enforcement
+
+================================================================================
+4. AC-ONLY TESTING MODE
+================================================================================
+
+When you provide a JIRA ticket with acceptance criteria:
+
+ENFORCEMENT RULE:
+  Exactly 1 test per acceptance criterion, no more, no less.
+
+NO EXPLORATORY TESTING:
+  • No "what if" scenarios
+  • No edge cases beyond AC scope
+  • No variant testing
+  • No negative test cases (unless explicitly in AC)
+
+TESTING APPROACH:
+  • Read all ACs from ticket
+  • Create test for each AC
+  • Validate each AC requirement
+  • Report pass/fail per AC
+
+EXAMPLE:
+  
+  Ticket: PBL-1234 "Display live match data"
+  
+  Acceptance Criteria:
+    AC1: Match page loads within 2 seconds
+    AC2: Live score updates without page refresh
+    AC3: Team statistics display correctly
+    AC4: Event timeline appears in chronological order
+    AC5: Auth0 users can access their role-based data
+  
+  Test Plan (exactly 5 tests):
+    Test 1: Validate match page load time < 2 seconds
+    Test 2: Verify live score updates via WebSocket
+    Test 3: Validate team statistics data accuracy
+    Test 4: Verify event timeline chronological order
+    Test 5: Verify RBAC data isolation per user role
+  
+  Result:
+    ✅ Test 1: PASS
+    ✅ Test 2: PASS
+    ❌ Test 3: FAIL (statistics off by 1)
+    ✅ Test 4: PASS
+    ✅ Test 5: PASS
+    
+    OVERALL: CONDITIONAL (4/5 passed, fix statistics then retest)
+
+BENEFITS:
+  • Fast, focused testing
+  • No wasted test cycles
+  • Clear pass/fail per requirement
+  • Quick turnaround (10-30 minutes)
+  • High confidence in meeting requirements
+
+================================================================================
+5. AUTOPILOT ENFORCEMENT (ZERO HUMAN INTERVENTION)
+================================================================================
+
+THE AGENT NEVER DOES THIS:
+  ❌ Asks for confirmation ("Should I proceed?")
+  ❌ Asks for approval ("Does this look good?")
+  ❌ Asks for clarification (without context, use inference)
+  ❌ Waits for user input
+  ❌ Stops mid-execution
+  ❌ Skips tests due to errors
+  ❌ Presents intermediate results for review
+  ❌ Shows multiple options for user to choose
+  ❌ Asks to verify environment or credentials
+
+THE AGENT ALWAYS DOES THIS:
+  ✅ Runs all 11 phases automatically from start to finish
+  ✅ Executes without interruption
+  ✅ Handles errors gracefully (marks as FAILED, continues)
+  ✅ Finds workarounds (mocking, retrying, alternative data)
+  ✅ Achieves 100% test execution coverage
+  ✅ Never skips a test (use mock data if needed)
+  ✅ Presents only final results to user
+  ✅ Returns results.md with comprehensive report
+  ✅ Posts JIRA comment with PASS/FAIL/CONDITIONAL status
+
+ERROR HANDLING STRATEGY:
+  
+  If connection refused:
+    → Mark test FAILED
+    → Continue to next test
+    → Document error in root causes
+  
+  If auth error:
+    → Mark test FAILED
+    → Try with different credentials (if available)
+    → Continue to next test
+  
+  If endpoint not found (404):
+    → Try alternate endpoint
+    → Use mock data as fallback
+    → Mark test with caveat
+    → Continue to next test
+  
+  If data unavailable:
+    → Use simulated/mock data
+    → Mark test as "validated with mock"
+    → Continue to next test
+  
+  NEVER: Stop execution, ask user, or skip test
+
+SESSION RESUMPTION:
+  
+  If session files already exist:
+    • .qag/sessions/{SESSION-ID}/context.md exists?
+      → Skip Scout discovery
+      → Use existing context
+    
+    • .qag/sessions/{SESSION-ID}/test-plan.md exists?
+      → Skip Scout + Designer
+      → Start execution immediately
+    
+    • Tests already executed?
+      → Skip execution
+      → Proceed directly to reporting
+  
+  This allows resuming interrupted sessions without re-doing prior work.
+
+================================================================================
+6. USAGE EXAMPLES
+================================================================================
+
+EXAMPLE 1: Test a Feature Ticket
+
+  Command:
+    "Test ticket PBL-1234"
+  
+  What Happens:
+    1. Agent reads PBL-1234 from JIRA
+    2. Scout discovers PBL product architecture
+    3. Test Designer creates test cases (1 per AC)
+    4. Frontend tests validate UI
+    5. REST API tests validate SDAPI endpoints
+    6. GraphQL tests validate Apollo queries
+    7. WebSocket tests validate SDDP streams
+    8. Data validation ensures SDAPI/SDDP sync
+    9. Security tests validate Auth0 RBAC
+    10. Log analysis detects hidden errors
+    11. Root cause analysis on failures
+    12. Reporter files bugs + posts JIRA comment
+  
+  Time to Completion: 15-30 minutes (fully automated)
+  
+  Results:
+    • results.md with test summary
+    • JIRA comment on PBL-1234
+    • JIRA bugs filed for failures (PBL-1235, PBL-1236, etc.)
+    • Root cause documented for each bug
+
+EXAMPLE 2: Test a Data Flow Scenario
+
+  Command:
+    "Test the live match data flow for a soccer match on staging"
+  
+  What Happens:
+    1. Scout explores codebase (no JIRA ticket)
+    2. Identifies SDAPI endpoints + SDDP subscriptions
+    3. Test Designer creates 8 focused tests
+    4. Executes: REST → GraphQL → WebSocket → DataVal
+    5. Validates SDAPI/SDDP consistency
+    6. Analyzes logs for anomalies
+    7. Reports comprehensive results
+  
+  Time to Completion: 10-20 minutes (fully automated)
+  
+  Results:
+    • results.md with flow validation report
+    • Evidence (screenshots, API responses)
+    • JIRA comment (optional, if ticket provided)
+
+EXAMPLE 3: Security Testing
+
+  Command:
+    "Test PBL-1235 - Auth0 role-based access control"
+  
+  What Happens:
+    1. Scout reads PBL-1235, understands RBAC requirements
+    2. Test Designer creates 9 security-focused tests
+    3. Tests Internal role: Full access
+    4. Tests Betting role: Restricted access
+    5. Tests Media role: Public data only
+    6. Tests IDOR vulnerabilities
+    7. Tests injection attacks
+    8. Tests rate limiting
+    9. Reports findings with severity
+  
+  Time to Completion: 15-25 minutes (fully automated)
+  
+  Results:
+    • Security findings report
+    • JIRA comment with severity classification
+    • JIRA bugs for vulnerabilities found
+    • Recommendations for fixes
+
+================================================================================
+7. OUTPUT ARTIFACTS
+================================================================================
+
+Each test session produces the following artifacts in:
+  .qag/sessions/{SESSION-ID}/
+
+FILE 1: context.md
+  Purpose: Product discovery output
+  Created By: Scout agent
+  Contains:
+    • Product overview (tech stack, architecture)
+    • Acceptance criteria from JIRA ticket
+    • API contracts and endpoints
+    • Data sources and flows
+    • User roles and permissions
+    • Test scope and priorities
+    • Identified test types (FE/REST/GraphQL/WebSocket/etc.)
+  Size: 2-5 KB typically
+  Read By: Test Designer, all Runners, Root Cause Analyzer, Reporter
+
+FILE 2: test-plan.md
+  Purpose: Test case design output
+  Created By: Test Designer
+  Contains:
+    • Test case list (exactly N tests for N ACs)
+    • Test type (FE, REST, GraphQL, WebSocket, DataVal, Security)
+    • Test priority (Critical, High, Medium, Low)
+    • Expected results per test
+    • AC mapping (which test validates which AC)
+    • Data requirements
+  Size: 3-10 KB typically
+  Format: Markdown with test case table
+  Updated By: All Runners (with execution results)
+  Read By: PBL Agent (routing), all Runners, Root Cause Analyzer, Reporter
+
+FILE 3: results.md
+  Purpose: Final test results report
+  Created By: Reporter agent
+  Contains:
+    • Test summary (total, passed, failed, conditional)
+    • Overall status (PASS / FAIL / CONDITIONAL)
+    • Recommendation (OK to merge / Test and fix / Block)
+    • Per-test results with pass/fail status
+    • Evidence (screenshots, API responses)
+    • Root causes for failures
+    • JIRA bug links
+    • Session metadata (date, duration, environment)
+  Size: 10-30 KB typically
+  Format: Markdown with sections and links
+  Presented To: User via Copilot Chat
+  Posted To: JIRA ticket as comment
+
+FILE 4: root-cause-findings.md
+  Purpose: Root cause analysis for failures
+  Created By: Root Cause Analyzer
+  Contains:
+    • Failed test summary
+    • Root cause determination
+    • Code references
+    • Configuration issues
+    • Data flow breakpoints
+    • Recommendations for fix
+  Size: 2-8 KB per failure
+  Format: Markdown with code blocks and references
+  Used By: Reporter (enriches bug reports)
+
+DIRECTORY: evidence/
+  Purpose: Test execution evidence
+  Created By: All Runners
+  Contains:
+    • Screenshots (one per frontend test)
+    • API response snapshots (one per API test)
+    • Log excerpts (error logs)
+    • Message captured (WebSocket messages)
+  File Format: JSON, PNG, TXT
+  Organized By: Test case ID and type
+
+DIRECTORY: logs/
+  Purpose: Application logs captured during testing
+  Created By: Log Analyzer
+  Contains:
+    • Backend application logs
+    • Database query logs
+    • API gateway logs
+    • Error log excerpts
+  File Format: TXT (plain text logs)
+  Organized By: Timestamp and log level
+
+JIRA ARTIFACTS (Created External to .qag/):
+
+  1. JIRA Comment on Original Ticket
+     Posted To: Original ticket (e.g., PBL-1234)
+     Content:
+       • Test summary (X passed, Y failed)
+       • Overall status (PASS/FAIL/CONDITIONAL)
+       • Recommendation
+       • Links to filed bugs (if any)
+       • Evidence summary
+     Example:
+       "✅ 4/5 tests PASSED
+        ❌ 1/5 tests FAILED: Statistics calculation error
+        STATUS: CONDITIONAL (requires fix)
+        Bug filed: PBL-1235 (Statistics off by 1)
+        See attached results.md for details"
+
+  2. JIRA Bugs (for failures)
+     Created For: Each test failure
+     Content:
+       • Title: Clear description of what failed
+       • Severity: HIGH/MEDIUM/LOW based on impact
+       • Description: Detailed failure description
+       • Steps to Reproduce: Test case and data
+       • Root Cause: Why it failed (from Root Cause Analyzer)
+       • Actual Result: What happened
+       • Expected Result: What should happen
+       • Evidence: Screenshots, API responses
+       • Links: Linked to original feature ticket
+     Example:
+       Title: "Statistics calculation incorrect for cricket matches"
+       Severity: HIGH
+       Description: Test PBL-1234-TC-3 failed...
+       Root Cause: N+1 query in statistics resolver
+       Evidence: [screenshot], [API response], [log excerpt]
+
+================================================================================
+8. KEY DIFFERENTIATORS
+================================================================================
+
+ZERO HUMAN INTERVENTION
+  → Run it and walk away
+  → Results appear in JIRA automatically
+  → No checkpoints, approvals, or confirmations
+
+MULTI-LAYER TESTING
+  → Tests UI, REST APIs, GraphQL, WebSocket, data, security in one go
+  → Comprehensive coverage across all layers
+
+INTELLIGENT ROOT CAUSE ANALYSIS
+  → Doesn't just say "test failed"
+  → Explains WHY it failed (traces to source code, config, data)
+  → Provides actionable recommendations
+
+AC-FOCUSED
+  → Only tests what matters (acceptance criteria)
+  → Fast, focused validation
+  → No wasted test cycles on edge cases
+
+CROSS-SOURCE VALIDATION
+  → Ensures SDAPI/SDDP data consistency
+  → Detects data sync issues
+  → Validates proxy correctness
+
+JIRA-NATIVE INTEGRATION
+  → Files bugs with proper severity
+  → Posts results comments to tickets
+  → Tracks test results in your issue tracker
+  → Maintains full audit trail
+
+COMPREHENSIVE REPORTING
+  → Screenshots for UI tests
+  → API responses for integration tests
+  → Backend logs for error diagnosis
+  → Root causes documented
+  → Severity levels assigned
+
+ADAPTIVE ERROR HANDLING
+  → Handles environment obstacles gracefully
+  → Finds workarounds (mocking, retrying)
+  → Never skips tests
+  → Achieves 100% execution coverage
+
+================================================================================
+9. GETTING STARTED
+================================================================================
+
+PREREQUISITES:
+  1. GitHub Copilot with Chat enabled
+  2. VS Code with these MCP servers:
+     • Playwright MCP (for browser automation)
+     • Atlassian MCP (for JIRA integration)
+  3. JIRA project with test tickets (optional)
+  4. Environment URL (staging or prod)
+
+SETUP:
+  1. Clone qag-qa-agent repository
+  2. Add to VS Code workspace
+  3. Configure .env file (or let agent use defaults)
+  4. Ensure Playwright MCP and Atlassian MCP are running
+
+FIRST TEST:
+  1. Open Copilot Chat
+  2. Type: "Test ticket PBL-1234"
+  3. Watch the agent work
+  4. Results appear in .qag/sessions/PBL-1234/results.md
+  5. JIRA comment posted to PBL-1234
+
+RECURRING TESTS:
+  • Test same ticket again: "Test ticket PBL-1234" (creates new session)
+  • Test new feature: "Test ticket PBL-1235"
+  • Test scenario: "Test login flow on staging"
+  • Test data: "Test the live match data for cricket matches"
+
+MONITORING PROGRESS:
+  • Watch terminal output for phase progression
+  • Check .qag/sessions/{SESSION-ID}/ for artifact creation
+  • Read results.md when complete
+  • Review JIRA comment on ticket
+
+================================================================================
+10. QUICK REFERENCE
+================================================================================
+
+COMMAND FORMATS:
+
+  Test a JIRA ticket (AC-only):
+    "Test ticket PBL-1234"
+
+  Test a scenario (free-form):
+    "Test the live match data flow for a soccer match on staging"
+
+  Test with custom environment:
+    "Test PBL-1234 on https://staging.example.com"
+
+  Test with credentials:
+    "Test PBL-1234 with user@example.com / mypassword123"
+
+TEST EXECUTION PHASES:
+
+  Phase 0: Session ID resolution
+  Phase 1-2: Scout (discovery + context.md)
+  Phase 3-4: Test Designer (design + test-plan.md)
+  Phase 5: Execute all test types in parallel
+  Phase 5.5: Root Cause Analysis (if failures)
+  Phase 5.7: Log Analysis (error detection)
+  Phase 6: Reporting (results.md + JIRA)
+  Phase 7: Cleanup (remove artifacts)
+
+EXPECTED OUTCOMES:
+
+  Success (5 ACs, all pass):
+    ✅ OVERALL STATUS: PASS
+    ✅ Recommendation: OK to merge
+    ✅ JIRA comment: "5/5 tests PASSED"
+
+  Partial Failure (5 ACs, 4 pass, 1 fail):
+    ⚠️  OVERALL STATUS: CONDITIONAL
+    ⚠️  Recommendation: Test and fix before merge
+    ⚠️  JIRA comment: "4/5 tests PASSED, 1 FAILED"
+    ⚠️  Bug created: PBL-1235 with root cause
+
+  Complete Failure (5 ACs, all fail):
+    ❌ OVERALL STATUS: FAIL
+    ❌ Recommendation: Block merge
+    ❌ JIRA comment: "0/5 tests PASSED"
+    ❌ Bugs created: PBL-1235, PBL-1236, etc.
+
+TYPICAL TIMELINES:
+
+  Feature Development (20-40 tests):
+    ~ 45-60 minutes full execution
+
+  Acceptance Testing (5-15 tests):
+    ~ 15-30 minutes full execution
+
+  Security Testing (8-12 tests):
+    ~ 20-40 minutes full execution
+
+  Data Flow Validation (6-10 tests):
+    ~ 15-25 minutes full execution
+
+TIME BREAKDOWN:
+  Discovery:        5-10 minutes
+  Test Design:      5-10 minutes
+  Execution:        5-20 minutes (depends on test count)
+  Analysis:         5-10 minutes
+  Reporting:        5 minutes
+
+TOTAL: 25-55 minutes average (fully automated)
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+
+For latest information, see README.md and AGENTS.md in the repository.
+For detailed workflow, see .github/agents/pbl_agent.md
+For skills documentation, see .github/skills/*/SKILL.md
